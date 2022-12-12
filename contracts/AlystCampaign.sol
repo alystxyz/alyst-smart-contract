@@ -55,6 +55,15 @@ contract AlystCampaign {
 
     }
 
+    function refund(uint _amount) public {
+        //need to do checking condition for campaign if the timePeriod has ended & campaign status failed
+        
+        // check amount invested 
+        uint refundAmount = userToPledgeAmount[msg.sender];
+        NOTE.transferFrom(address(this), msg.sender, refundAmount);
+
+    }
+
     function withdraw(address _campaignTreasury) public {
        require(campaignCreator == msg.sender);
        require(campaignFundedAmount == campaignTargetAmount);
