@@ -1,13 +1,13 @@
 pragma solidity ^0.8.15;
 
 
-interface NOTEInterface {
-    function balanceOf(address account) external view returns (uint256);
-    function transfer(address to, uint256 amount) external returns (bool);
-    function allowance(address owner, address spender) external view returns (uint256);
-    function approve(address spender, uint256 amount) external returns (bool);
-    function transferFrom(address from, address to, uint256 amount) external returns (bool);
-}
+// interface NOTEInterface {
+//     function balanceOf(address account) external view returns (uint256);
+//     function transfer(address to, uint256 amount) external returns (bool);
+//     function allowance(address owner, address spender) external view returns (uint256);
+//     function approve(address spender, uint256 amount) external returns (bool);
+//     function transferFrom(address from, address to, uint256 amount) external returns (bool);
+// }
 
 
 
@@ -24,8 +24,8 @@ contract AlystCampaign {
 
     address[] public pledgers;
 
-    address public NOTEAddress = 0x07865c6E87B9F70255377e024ace6630C1Eaa37F;
-    NOTEInterface NOTE = NOTEInterface(NOTEAddress);
+    // address public NOTEAddress = 0x07865c6E87B9F70255377e024ace6630C1Eaa37F;
+    // NOTEInterface NOTE = NOTEInterface(NOTEAddress);
 
     address alystTreasury = 0xE7f6F39B0A2b5Adf22A4ebc8105AF443086547c9;
 
@@ -45,17 +45,17 @@ contract AlystCampaign {
     }
 
     function pledgeToCampaign(uint _amount) public payable {
-        require(_amount > 0, "amount cannot be zero");
-        NOTE.allowance(msg.sender, address(this));
+        require(msg.value > 0, "amount cannot be zero");
+        // NOTE.allowance(msg.sender, address(this));
 
-        NOTE.transferFrom(msg.sender, address(this), _amount);
+        // NOTE.transferFrom(msg.sender, address(this), _amount);
 
         if (!userHasPledged[msg.sender]) {
              pledgers.push(msg.sender);
         }
         userHasPledged[msg.sender] = true;
-        userToPledgeAmount[msg.sender] = _amount;
-        campaignFundedAmount = campaignFundedAmount + _amount;
+        userToPledgeAmount[msg.sender] = msg.value;
+        campaignFundedAmount = campaignFundedAmount + msg.value;
 
 
     }
@@ -66,7 +66,8 @@ contract AlystCampaign {
         
         // check amount invested 
         uint refundAmount = userToPledgeAmount[msg.sender];
-        NOTE.transferFrom(address(this), msg.sender, refundAmount);
+        payable(msg.sender).transfer(refundAmount);
+        // NOTE.transferFrom(address(this), msg.sender, refundAmount);
 
     }
 
@@ -78,8 +79,11 @@ contract AlystCampaign {
        uint alystServiceCharge = address(this).balance * 3 / 200  ;
        uint projectFund = address(this).balance - alystServiceCharge;
 
-        NOTE.transferFrom(address(this), _campaignTreasury, projectFund);
-        NOTE.transferFrom(address(this), alystTreasury, alystServiceCharge);
+       payable(_campaignTreasury).transfer(projectFund);
+       payable(alystTreasury).transfer(alystServiceCharge);
+
+        // NOTE.transferFrom(address(this), _campaignTreasury, projectFund);
+        // NOTE.transferFrom(address(this), alystTreasury, alystServiceCharge);
 
     }
 
