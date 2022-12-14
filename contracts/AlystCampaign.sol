@@ -17,7 +17,10 @@ contract AlystCampaign {
     uint public campaignTargetAmount;
     uint public campaignFundedAmount;
     uint public campaignPeriod;
+    uint public campaignTimeOpen;
     address public campaignCreator;
+
+    bool public campaignStatus;
 
     address[] public pledgers;
 
@@ -37,6 +40,8 @@ contract AlystCampaign {
         campaignTargetAmount = _campaignTargetAmount;
         campaignPeriod = _campaignPeriod;
         campaignCreator = msg.sender;
+        campaignTimeOpen = block.timestamp;
+        campaignStatus = true;
     }
 
     function pledgeToCampaign(uint _amount) public payable {
@@ -56,7 +61,8 @@ contract AlystCampaign {
     }
 
     function refund(uint _amount) public {
-        //need to do checking condition for campaign if the timePeriod has ended & campaign status failed
+        require(block.timestamp > campaignTimeOpen + campaignPeriod);
+        require(campaignStatus == false);
         
         // check amount invested 
         uint refundAmount = userToPledgeAmount[msg.sender];
@@ -65,6 +71,7 @@ contract AlystCampaign {
     }
 
     function withdraw(address _campaignTreasury) public {
+       require(block.timestamp > campaignTimeOpen + campaignPeriod);
        require(campaignCreator == msg.sender);
        require(campaignFundedAmount == campaignTargetAmount);
 
@@ -76,6 +83,12 @@ contract AlystCampaign {
 
     }
 
+    function allowCampaignRefund() public {
+        require(campaignCreator == msg.sender);
+
+        campaignStatus = false;
+    }
+ 
 
 
 }
