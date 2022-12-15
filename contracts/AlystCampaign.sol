@@ -79,8 +79,8 @@ contract AlystCampaign {
        // uint alystServiceCharge = address(this).balance * 3 / 200  ;
        // uint projectFund = address(this).balance - alystServiceCharge;
 
-       payable(_campaignTreasury).transfer(projectFund);
-       payable(alystTreasury).transfer(alystServiceCharge);
+       payable(_campaignTreasury).transfer(address(this).balance);
+       //payable(alystTreasury).transfer(alystServiceCharge);
 
         // NOTE.transferFrom(address(this), _campaignTreasury, projectFund);
         // NOTE.transferFrom(address(this), alystTreasury, alystServiceCharge);
