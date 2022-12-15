@@ -87,12 +87,7 @@ contract AlystCampaign {
 
     }
 
-    function allowCampaignRefund() public {
-        require(campaignCreator == msg.sender);
-
-        campaignStatus = false;
-    }
- 
+  
 
 
 }
