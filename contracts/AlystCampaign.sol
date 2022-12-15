@@ -60,7 +60,7 @@ contract AlystCampaign {
 
     }
 
-    function refund(uint _amount) public {
+    function refund() public {
         require(block.timestamp > campaignTimeOpen + campaignPeriod);
         require(campaignStatus == false);
         
