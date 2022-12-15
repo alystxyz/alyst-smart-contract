@@ -62,7 +62,7 @@ contract AlystCampaign {
 
     function refund() public {
         require(block.timestamp > campaignTimeOpen + campaignPeriod);
-        require(campaignStatus == false);
+        require(campaignTargetAmount !== campaignFundedAmount);
         
         // check amount invested 
         uint refundAmount = userToPledgeAmount[msg.sender];
