@@ -76,8 +76,8 @@ contract AlystCampaign {
        require(campaignCreator == msg.sender);
        require(campaignFundedAmount == campaignTargetAmount || campaignFundedAmount > campaignTargetAmount);
 
-       uint alystServiceCharge = address(this).balance * 3 / 200  ;
-       uint projectFund = address(this).balance - alystServiceCharge;
+       // uint alystServiceCharge = address(this).balance * 3 / 200  ;
+       // uint projectFund = address(this).balance - alystServiceCharge;
 
        payable(_campaignTreasury).transfer(projectFund);
        payable(alystTreasury).transfer(alystServiceCharge);
