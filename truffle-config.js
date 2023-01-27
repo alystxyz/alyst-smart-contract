@@ -14,9 +14,9 @@ module.exports = {
    */
 
   networks: {
-    canto: {
+    mumbai: {
       networkCheckTimeout: 10000,
-      provider: () => new HDWalletProvider(MNEMONIC, `https://eth.plexnode.wtf/`),
+      provider: () => new HDWalletProvider(MNEMONIC, `https://polygon-mumbai.infura.io/v3/b8137b6fac68440aa3183ab4d12a4a57`),
       network_id: '740',
       gas: 4465030,
       confirmations: 2,

@@ -14,6 +14,9 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 // }
 
 
+interface Turnstile {
+    function assign(uint256) external returns(uint256);
+}
 
 contract AlystCampaign is ERC721URIStorage {
 
@@ -28,14 +31,13 @@ contract AlystCampaign is ERC721URIStorage {
     uint public campaignTimeOpen;
     address public campaignCreator;
 
-    bool public campaignStatus;
-
     address[] public pledgers;
 
     // address public NOTEAddress = 0x07865c6E87B9F70255377e024ace6630C1Eaa37F;
     // NOTEInterface NOTE = NOTEInterface(NOTEAddress);
 
     address alystTreasury = 0xE7f6F39B0A2b5Adf22A4ebc8105AF443086547c9;
+    Turnstile turnstile = Turnstile(0xEcf044C5B4b867CFda001101c617eCd347095B44);
 
 
     mapping(address => uint) public userToPledgeAmount;
@@ -45,22 +47,24 @@ contract AlystCampaign is ERC721URIStorage {
 
     constructor(string memory _campaignName, 
                 string memory _campaignSymbol, 
+                string memory _campaignURI,
                 uint _campaignTargetAmount, 
-                uint _campaignPeriod) ERC721(_campaignName, _campaignSymbol) {
+                uint _campaignPeriod,
+                uint256 _csrID
+                ) ERC721(_campaignName, _campaignSymbol) {
+        campaignNFTURI = _campaignURI;
         campaignName = _campaignName;
         campaignTargetAmount = _campaignTargetAmount;
         campaignPeriod = _campaignPeriod;
         campaignCreator = msg.sender;
         campaignTimeOpen = block.timestamp;
-        campaignStatus = true;
+        turnstile.assign(_csrID);
     }
 
     function pledgeToCampaign(uint _amount) public payable {
         require(msg.value > 0, "amount cannot be zero");
         // NOTE.allowance(msg.sender, address(this));
         // NOTE.transferFrom(msg.sender, address(this), _amount);
-
-        _tokenIds.increment();
 
         if (!userHasPledged[msg.sender]) {
              pledgers.push(msg.sender);
@@ -69,10 +73,19 @@ contract AlystCampaign is ERC721URIStorage {
         userToPledgeAmount[msg.sender] = msg.value;
         campaignFundedAmount = campaignFundedAmount + msg.value;
 
-        uint256 newItemId = _tokenIds.current();
+    }
+
+    function mintProofOfPledge() public returns (uint) {
+        require(block.timestamp > campaignTimeOpen + campaignPeriod);
+        require(campaignFundedAmount == campaignTargetAmount || campaignFundedAmount > campaignTargetAmount);
+
+        _tokenIds.increment();
+
+         uint256 newItemId = _tokenIds.current();
         _mint(msg.sender, newItemId);
         _setTokenURI(newItemId, campaignNFTURI);
 
+        return newItemId;
 
     }
 
