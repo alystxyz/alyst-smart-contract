@@ -29,12 +29,19 @@ contract CreateCampaign is Ownable {
 
     mapping(uint => CampaignIndex) public idToCampaignIndex;
 
-    function createCampaign(string memory  _campaignName, string memory  _Symbol, string memory _uri, uint _campaignTargetAmount, uint _campaignPeriod, uint256 _csrId) public returns (uint CampaignId) {
+    function createCampaign(string memory  _campaignName, 
+                            string memory  _Symbol, 
+                            string memory _uri, 
+                            uint _campaignTargetAmount, 
+                            uint _campaignPeriod, 
+                            uint256 _csrId) public returns (uint CampaignId) {
+
         _campaignIds.increment();
          AlystCampaign campaign = new AlystCampaign(_campaignName, _Symbol, _uri, _campaignTargetAmount, _campaignPeriod, _csrId);
          uint256 newCampaignId = _campaignIds.current();
          idToCampaignIndex[newCampaignId] = CampaignIndex(_campaignName, address(campaign));
          return newCampaignId;
+         
     }
 
     function getCampaignAddress(uint _index) public view returns (address) {
