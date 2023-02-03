@@ -76,12 +76,12 @@ contract AlystCampaign is AccessControl ,ERC721URIStorage {
              pledgers.push(msg.sender);
         }
         userHasPledged[msg.sender] = true;
-
+        //check if user pledge $CANTO
         if (msg.value > 0) {
             userToPledgeAmount[msg.sender] = msg.value;
             userPledgeNOTE[msg.sender] = false;
             campaignFundedAmount = campaignFundedAmount + msg.value;
-        } else if (_amount > 0 && msg.value == 0) {
+        } else if (_amount > 0 && msg.value == 0) {  //check if user pledge $NOTE
             userToPledgeAmount[msg.sender] = _amount;
             userPledgeNOTE[msg.sender] = true;
             campaignFundedAmount = campaignFundedAmount + _amount;
