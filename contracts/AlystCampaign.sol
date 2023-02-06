@@ -43,8 +43,6 @@ contract AlystCampaign is AccessControl ,ERC721URIStorage {
 
     mapping(address => uint) public userToPledgeAmount;
     mapping(address => bool) public userHasPledged;
-    mapping(address => bool) public userPledgeNOTE;
-
 
 
     constructor(string memory _campaignName, 
@@ -68,24 +66,17 @@ contract AlystCampaign is AccessControl ,ERC721URIStorage {
     _;
   }
 
-    function pledgeToCampaign(uint _amount) public payable {
-        require(msg.value > 0 || _amount > 0);
+    function pledgeToCampaign(uint _amount) public {
+        require(_amount > 0);
         NOTE.transferFrom(msg.sender, address(this), _amount);
 
         if (!userHasPledged[msg.sender]) {
              pledgers.push(msg.sender);
         }
         userHasPledged[msg.sender] = true;
-        //check if user pledge $CANTO
-        if (msg.value > 0) {
-            userToPledgeAmount[msg.sender] = msg.value;
-            userPledgeNOTE[msg.sender] = false;
-            campaignFundedAmount = campaignFundedAmount + msg.value;
-        } else if (_amount > 0 && msg.value == 0) {  //check if user pledge $NOTE
-            userToPledgeAmount[msg.sender] = _amount;
-            userPledgeNOTE[msg.sender] = true;
-            campaignFundedAmount = campaignFundedAmount + _amount;
-        }
+
+        userToPledgeAmount[msg.sender] = _amount;
+        campaignFundedAmount = campaignFundedAmount + _amount;
 
     }
 
@@ -104,7 +95,8 @@ contract AlystCampaign is AccessControl ,ERC721URIStorage {
 
     }
 
-    function refund() public {
+    
+    function refund() public {   
         require(block.timestamp > campaignTimeOpen + campaignPeriod);
         require(campaignTargetAmount != campaignFundedAmount);
         require(userToPledgeAmount[msg.sender] > 0);
@@ -112,12 +104,8 @@ contract AlystCampaign is AccessControl ,ERC721URIStorage {
         // check amount invested 
         uint refundAmount = userToPledgeAmount[msg.sender];
         userToPledgeAmount[msg.sender] = 0;
+        NOTE.transferFrom(address(this), msg.sender, refundAmount);
 
-        if(userPledgeNOTE[msg.sender] == true) {
-             NOTE.transferFrom(address(this), msg.sender, refundAmount);
-        } else {
-             payable(msg.sender).transfer(refundAmount);
-        }
         
     }
 
@@ -131,8 +119,6 @@ contract AlystCampaign is AccessControl ,ERC721URIStorage {
        uint noteContractBalance = NOTE.balanceOf(address(this));
 
        NOTE.transferFrom(address(this), _campaignTreasury, noteContractBalance);
-       payable(_campaignTreasury).transfer(address(this).balance);
-       //payable(alystTreasury).transfer(alystServiceCharge);
 
         // NOTE.transferFrom(address(this), _campaignTreasury, projectFund);
         // NOTE.transferFrom(address(this), alystTreasury, alystServiceCharge);
