@@ -1,28 +1,25 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-
-interface NOTEInterface {
-    function balanceOf(address account) external view returns (uint256);
-    function transfer(address to, uint256 amount) external returns (bool);
-    function allowance(address owner, address spender) external view returns (uint256);
-    function approve(address spender, uint256 amount) external returns (bool);
-    function transferFrom(address from, address to, uint256 amount) external returns (bool);
-}
 
 
 interface Turnstile {
     function assign(uint256) external returns(uint256);
 }
 
-contract AlystCampaign is AccessControl ,ERC721URIStorage {
+contract AlystCampaign is AccessControl ,ERC721URIStorage, ReentrancyGuard {
 
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
+
+    IERC20 public NOTE;
 
     string public campaignName;
     string private campaignNFTURI;
@@ -35,15 +32,18 @@ contract AlystCampaign is AccessControl ,ERC721URIStorage {
     address[] public pledgers;
 
     address public NOTEAddress = 0x07865c6E87B9F70255377e024ace6630C1Eaa37F;
-    NOTEInterface NOTE = NOTEInterface(NOTEAddress);
 
-    // address alystTreasury = 0xE7f6F39B0A2b5Adf22A4ebc8105AF443086547c9;
     Turnstile turnstile = Turnstile(0xEcf044C5B4b867CFda001101c617eCd347095B44);
 
 
     mapping(address => uint) public userToPledgeAmount;
-    mapping(address => bool) public userHasPledged;
+    mapping(address => uint) public userHasPledged; // 0 - False / 1 - True
 
+    event Pledge(address indexed _from, uint amount);
+    event MintPOP(address indexed _from, uint nftID);
+    event Refund(address indexed _from, uint amount);
+
+    error RestrictedToAdmin();
 
     constructor(string memory _campaignName, 
                 string memory _campaignSymbol, 
@@ -58,32 +58,37 @@ contract AlystCampaign is AccessControl ,ERC721URIStorage {
         campaignTargetAmount = _campaignTargetAmount;
         campaignPeriod = _campaignPeriod;
         campaignTimeOpen = block.timestamp;
+        NOTE = IERC20(NOTEAddress);
         turnstile.assign(_csrID);
     }
 
     modifier onlyAdmin() {
-    require(isAdmin(msg.sender), "Restricted to admins.");
-    _;
+      if(!isAdmin(msg.sender)) 
+         revert RestrictedToAdmin();
+      
+      _;
   }
 
-    function pledgeToCampaign(uint _amount) public {
+    function pledgeToCampaign(uint _amount) public nonReentrant {
         require(_amount > 0);
         NOTE.transferFrom(msg.sender, address(this), _amount);
 
-        if (!userHasPledged[msg.sender]) {
+        if (userHasPledged[msg.sender] == 0) {
              pledgers.push(msg.sender);
         }
-        userHasPledged[msg.sender] = true;
+        userHasPledged[msg.sender] = 1;
 
         userToPledgeAmount[msg.sender] = _amount;
         campaignFundedAmount = campaignFundedAmount + _amount;
 
+        emit Pledge(msg.sender, _amount);
+
     }
 
-    function mintProofOfPledge() public returns (uint) {
+    function mintProofOfPledge() public nonReentrant returns (uint) {
         require(block.timestamp > campaignTimeOpen + campaignPeriod);
         require(campaignFundedAmount == campaignTargetAmount || campaignFundedAmount > campaignTargetAmount);
-        require(userHasPledged[msg.sender] == true);
+        require(userHasPledged[msg.sender] == 1);
 
         _tokenIds.increment();
 
@@ -91,12 +96,14 @@ contract AlystCampaign is AccessControl ,ERC721URIStorage {
         _mint(msg.sender, newItemId);
         _setTokenURI(newItemId, campaignNFTURI);
 
+        emit MintPOP(msg.sender, newItemId);
+
         return newItemId;
 
     }
 
     
-    function refund() public {   
+    function refund() public nonReentrant {   
         require(block.timestamp > campaignTimeOpen + campaignPeriod);
         require(campaignTargetAmount != campaignFundedAmount);
         require(userToPledgeAmount[msg.sender] > 0);
@@ -105,6 +112,8 @@ contract AlystCampaign is AccessControl ,ERC721URIStorage {
         uint refundAmount = userToPledgeAmount[msg.sender];
         userToPledgeAmount[msg.sender] = 0;
         NOTE.transferFrom(address(this), msg.sender, refundAmount);
+
+        emit Refund(msg.sender, refundAmount);
 
         
     }
@@ -118,10 +127,7 @@ contract AlystCampaign is AccessControl ,ERC721URIStorage {
 
        uint noteContractBalance = NOTE.balanceOf(address(this));
 
-       NOTE.transferFrom(address(this), _campaignTreasury, noteContractBalance);
-
-        // NOTE.transferFrom(address(this), _campaignTreasury, projectFund);
-        // NOTE.transferFrom(address(this), alystTreasury, alystServiceCharge);
+       NOTE.transfer(_campaignTreasury, noteContractBalance);
 
     }
 

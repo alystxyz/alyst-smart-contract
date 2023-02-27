@@ -1,16 +1,18 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
 
 import "./AlystCampaign.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 
 interface TurnstileR {
     function register(address) external returns(uint256);
 }
 
-contract CreateCampaign is Ownable {
+contract CreateCampaign is Ownable, ReentrancyGuard {
 
     TurnstileR turnstile = TurnstileR(0xEcf044C5B4b867CFda001101c617eCd347095B44);
 
@@ -35,7 +37,7 @@ contract CreateCampaign is Ownable {
                             string memory _uri, 
                             uint _campaignTargetAmount, 
                             uint _campaignPeriod, 
-                            uint256 _csrId) public returns (uint CampaignId) {
+                            uint256 _csrId) public nonReentrant returns (uint CampaignId) {
 
         _campaignIds.increment();
          AlystCampaign campaign = new AlystCampaign(_campaignName, _Symbol, _uri, _campaignTargetAmount, _campaignPeriod, _csrId);
